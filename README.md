@@ -1,4 +1,4 @@
-```markdown
+
 # Anonymous Chat Bot for Telegram
 
 ## Deskripsi
@@ -22,7 +22,7 @@ Anonymous Chat Bot adalah bot Telegram yang memungkinkan pengguna untuk berbicar
    ```bash
    git clone https://github.com/username/repository.git
    cd repository
-   ```
+
 
 2. **Instal Dependensi**:
    Pastikan Anda memiliki `pip` terinstal. Jalankan perintah berikut untuk menginstal library yang diperlukan:
