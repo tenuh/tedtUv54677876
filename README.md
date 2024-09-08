@@ -1,70 +1,73 @@
+# Telegram Anonymous Chat Bot
 
-# Anonymous Chat Bot for Telegram
+This is a simple anonymous chat bot built using Python and the Telegram Bot API. The bot connects random users for anonymous conversations and includes features like pseudonyms, gender-based pairing, and the ability to skip chats.
 
-## Deskripsi
+## Features
 
-Anonymous Chat Bot adalah bot Telegram yang memungkinkan pengguna untuk berbicara secara anonim dengan orang lain. Bot ini menghubungkan pengguna yang aktif secara acak dan memantau pesan untuk kata-kata terlarang. Pengguna juga dapat keluar dari sesi chat anonim kapan saja menggunakan perintah `/logout`.
+- **Random Pairing**: Users are randomly paired for anonymous chat sessions.
+- **Pseudonyms**: Each user is assigned a unique pseudonym to maintain anonymity.
+- **Gender Selection**: Users can select their gender (male/female) to be paired with a user of the opposite gender.
+- **Skip Feature**: Users can skip the current chat and be reconnected with a new random user.
+- **Forbidden Words Filter**: Messages containing forbidden words will be blocked.
 
-## Fitur
+## Getting Started
 
-- **Anonymous Chat**: Mencocokkan pengguna dengan orang lain secara acak untuk percakapan anonim.
-- **Pemantauan Kata-Kata Terlarang**: Memeriksa pesan untuk kata-kata terlarang sebelum mengirimkannya.
-- **Logout**: Memungkinkan pengguna untuk keluar dari sesi chat anonim kapan saja.
+### Prerequisites
 
-## Prasyaratan
+To run this bot, you'll need the following installed:
 
 - Python 3.x
-- Library `python-telegram-bot`
+- Telegram Bot Token (You can get this from [BotFather](https://core.telegram.org/bots#botfather) on Telegram)
 
-## Instalasi
+### Installation
 
-1. **Clone Repository** (Opsional):
+1. Clone the repository:
    ```bash
    git clone https://github.com/davlix/Telegram-anonymous-chat-bot.git
-   cd repository
-
-
-2. **Instal Dependensi**:
-   Pastikan Anda memiliki `pip` terinstal. Jalankan perintah berikut untuk menginstal library yang diperlukan:
-   ```bash
-   pip install python-telegram-bot
+   cd Telegram-anonymous-chat-bot
    ```
 
-3. **Konfigurasi Token Bot**:
-   Gantilah `YOUR_BOT_TOKEN` pada kode dengan token API yang Anda dapatkan dari BotFather di Telegram.
-
-## Cara Menggunakan
-
-1. **Simpan Kode**:
-   Salin kode Python ke dalam file bernama `anonymous_chat_bot.py`.
-
-2. **Jalankan Bot**:
-   Jalankan bot dengan perintah:
+2. Install the required Python packages:
    ```bash
-   python anonymous_chat_bot.py
+   pip install -r requirements.txt
    ```
 
-3. **Interaksi dengan Bot**:
-   - Kirimkan perintah `/start` untuk memulai chat anonymous.
-   - Kirimkan pesan teks untuk berinteraksi dengan pengguna lain.
-   - Gunakan perintah `/logout` untuk keluar dari sesi chat anonim.
+3. Add your Telegram Bot Token to the bot by modifying the `TOKEN` variable in the `bot.py` file:
+   ```python
+   TOKEN = 'YOUR_BOT_TOKEN'
+   ```
 
-## Contoh Perintah
+4. Run the bot:
+   ```bash
+   python bot.py
+   ```
 
-- **/start**: Memulai sesi chat anonim.
-- **/logout**: Menghapus sesi chat anonim Anda dan keluar dari percakapan saat ini.
+### Commands
 
-## Daftar Kata-Kata Terlarang
+- `/start`: Starts the bot and prompts the user to choose their gender.
+- `/male`: Choose the male gender for pairing with a female user.
+- `/female`: Choose the female gender for pairing with a male user.
+- `/skip`: Skip the current chat session and be paired with a new user.
+- `/logout`: Exit the current chat or waiting queue.
 
-Edit daftar `FORBIDDEN_WORDS` dalam kode untuk menambahkan atau menghapus kata-kata yang dianggap tidak pantas. Daftar ini digunakan untuk memfilter pesan yang dikirim oleh pengguna.
+### How It Works
 
-## Mengembangkan Lebih Lanjut
+1. When a user types `/start`, they are asked to choose their gender using `/male` or `/female`.
+2. After selecting a gender, they are added to a queue to be paired with a user of the opposite gender.
+3. Once paired, users can exchange messages anonymously using their pseudonyms.
+4. If a user sends `/skip`, they will leave the current chat and be paired with a new user from the queue.
+5. The bot ensures that users are only paired with the opposite gender, and offensive words (defined in the `FORBIDDEN_WORDS` list) are filtered out.
 
-update yang akan datang:
-- **Matchmaking**: Mencocokkan pengguna berdasarkan minat atau preferensi.
-- **Multi-Chat**: Menyediakan opsi chat dengan beberapa orang secara bersamaan.
-- **Statistik**: Menyediakan statistik penggunaan bot seperti jumlah pengguna aktif atau jumlah pesan.
+## Customization
 
+- **Forbidden Words**: You can add or modify the forbidden words list by updating the `FORBIDDEN_WORDS` variable in the `bot.py` file.
+- **Pseudonyms**: Update the `NICKNAMES` list to use different pseudonyms for users.
 
-Selamat menggunakan Anonymous Chat Bot!
-```
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
