@@ -20,7 +20,7 @@ Anonymous Chat Bot adalah bot Telegram yang memungkinkan pengguna untuk berbicar
 
 1. **Clone Repository** (Opsional):
    ```bash
-   git clone https://github.com/username/repository.git
+   git clone https://github.com/davlix/Telegram-anonymous-chat-bot.git
    cd repository
 
 
@@ -60,24 +60,11 @@ Edit daftar `FORBIDDEN_WORDS` dalam kode untuk menambahkan atau menghapus kata-k
 
 ## Mengembangkan Lebih Lanjut
 
-Anda dapat mengembangkan bot ini dengan menambahkan fitur tambahan seperti:
+update yang akan datang:
 - **Matchmaking**: Mencocokkan pengguna berdasarkan minat atau preferensi.
 - **Multi-Chat**: Menyediakan opsi chat dengan beberapa orang secara bersamaan.
 - **Statistik**: Menyediakan statistik penggunaan bot seperti jumlah pengguna aktif atau jumlah pesan.
 
-## Lisensi
-
-Proyek ini tidak memiliki lisensi resmi. Silakan gunakan dan modifikasi kode ini sesuai kebutuhan Anda.
-
-## Kontribusi
-
-Jika Anda ingin berkontribusi pada proyek ini, Anda dapat membuat pull request atau mengajukan isu melalui [GitHub Issues](https://github.com/username/repository/issues).
-
-## Kontak
-
-Jika Anda memiliki pertanyaan atau membutuhkan bantuan, Anda dapat menghubungi saya melalui email di [your-email@example.com](mailto:your-email@example.com).
-
----
 
 Selamat menggunakan Anonymous Chat Bot!
 ```
