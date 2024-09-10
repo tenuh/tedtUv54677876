@@ -10,9 +10,9 @@ waiting_users = {'male': [], 'female': []}
 user_data = {}
 
 # Daftar kata-kata yang ingin di-banned
-FORBIDDEN_WORDS = ['kata1', 'kata2', 'kata3']
+FORBIDDEN_WORDS = ['fuck', 'hell', 'asshole']
 
-NICKNAMES = ['Samaran1', 'Samaran2', 'Samaran3', 'Samaran4'] 
+NICKNAMES = ['Beruang', 'Tupai', 'Kucing', 'Panda'] 
 
 def contains_forbidden_words(text: str) -> bool:
     """Memeriksa apakah teks mengandung kata-kata terlarang."""
