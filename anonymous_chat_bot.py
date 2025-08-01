@@ -1,146 +1,252 @@
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+import logging
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+    CallbackQueryHandler
+)
 import re
 import random
 
-# Token bot
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+)
+
 TOKEN = 'YOUR_BOT_TOKEN'
-active_chats = {}
-waiting_users = {'male': [], 'female': []}
+
 user_data = {}
+waiting_users = {'male': [], 'female': []}
+active_chats = {}
 
-# Daftar kata-kata yang ingin di-banned
-FORBIDDEN_WORDS = ['fuck', 'hell', 'asshole']
+FORBIDDEN_WORDS = [
+    'fuck', 'hell', 'asshole', 'shit', 'bitch', 'cunt', 'dick', 'pussy', 'nigger', 'faggot',
+    'kontol', 'memek', 'jembut', 'bangsat', 'anjir', 'anjing', 'tolol', 'goblok', 'bodoh', 'kampret',
+    'brengsek', 'tai', 'sialan', 'bajingan', 'pepek', 'kimak', 'pukimak', 'asu', 'jancok', 'ngentot'
+]
 
-NICKNAMES = ['Beruang', 'Tupai', 'Kucing', 'Panda'] 
+NICKNAMES = [
+    'Beruang', 'Tupai', 'Kucing', 'Panda', 'Serigala', 'Elang', 'Singa', 'Harimau', 'Rusa',
+    'Rubah', 'Koala', 'Kelinci', 'Monyet', 'Bebek', 'Gajah', 'Kuda', 'Ular', 'Buaya', 'Babi',
+    'Semut', 'Lebah', 'Ikan', 'Hiu', 'Paus', 'Lumba-lumba', 'Bintang', 'Bulan', 'Matahari',
+    'Pelangi', 'Awan', 'Hujan', 'Angin', 'Petir', 'Salju', 'Gunung', 'Pantai', 'Laut', 'Sungai',
+    'Danau', 'Hutan', 'Pohon', 'Bunga', 'Mawar', 'Melati', 'Teratai', 'Buku', 'Pensil', 'Meja',
+    'Kursi', 'Lampu', 'Kopi', 'Teh', 'Susu', 'Gula', 'Garam', 'Merica', 'Jahe', 'Kunyit',
+    'Bawang', 'Cabai', 'Kentang', 'Wortel', 'Tomat', 'Apel', 'Jeruk', 'Mangga', 'Durian',
+    'Pisang', 'Nanas', 'Anggur', 'Stroberi', 'Ceri', 'Jambu', 'Kelapa'
+]
 
 def contains_forbidden_words(text: str) -> bool:
-    """Memeriksa apakah teks mengandung kata-kata terlarang."""
-    for word in FORBIDDEN_WORDS:
-        if re.search(rf'\b{word}\b', text, re.IGNORECASE):
-            return True
-    return False
+    pattern = r'\b(' + '|'.join(FORBIDDEN_WORDS) + r')\b'
+    return re.search(pattern, text, re.IGNORECASE) is not None
 
-def start(update: Update, context: CallbackContext) -> None:
-    """Menangani perintah /start."""
+def get_new_nickname():
+    used_nicknames = {data['nickname'] for data in user_data.values()}
+    available_nicknames = [n for n in NICKNAMES if n not in used_nicknames]
+    if not available_nicknames:
+        return random.choice(NICKNAMES)
+    return random.choice(available_nicknames)
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
     
-    if user_id in active_chats or user_id in waiting_users['male'] or user_id in waiting_users['female']:
-        update.message.reply_text('Anda sudah berada dalam sesi atau dalam antrian. Kirim /skip untuk mencari pengguna baru.')
-        return
-
-    update.message.reply_text('Selamat datang di bot chat anonim! Ketik /male jika Anda laki-laki atau /female jika Anda perempuan.')
-
-def set_gender(update: Update, context: CallbackContext, gender: str) -> None:
-    """Menangani pemilihan gender oleh pengguna."""
-    user_id = update.message.from_user.id
     if user_id in user_data:
-        update.message.reply_text('Anda sudah memilih gender. Kirim /skip untuk mencari pengguna baru.')
+        if user_id in active_chats:
+            await update.message.reply_text('Anda sudah dalam sesi chat. Kirim /skip untuk mencari pengguna baru atau /endchat untuk mengakhiri.')
+            return
+        elif user_id in waiting_users.get(user_data[user_id]['gender'], []):
+            await update.message.reply_text('Anda sudah dalam antrian. Menunggu pengguna lain...')
+            return
+
+    keyboard = [
+        [InlineKeyboardButton("Laki-laki", callback_data='male')],
+        [InlineKeyboardButton("Perempuan", callback_data='female')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(
+        'Selamat datang di bot chat anonim! Silakan pilih gender Anda untuk memulai.',
+        reply_markup=reply_markup
+    )
+
+async def set_gender(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = query.from_user.id
+    gender = query.data
+    
+    if user_id in user_data:
+        await query.edit_message_text('Anda sudah memilih gender. Kirim /skip untuk mencari pengguna baru atau /endchat untuk mengakhiri.')
         return
+
+    nickname = get_new_nickname()
+    user_data[user_id] = {'gender': gender, 'nickname': nickname, 'interests': set()}
     
-    nickname = random.choice(NICKNAMES)
-    NICKNAMES.remove(nickname) 
-    user_data[user_id] = {'gender': gender, 'nickname': nickname}
+    await query.edit_message_text(
+        f'Terima kasih telah memilih. Nama samaran Anda adalah **{nickname}**. '
+        f'Anda juga bisa menambahkan minat dengan perintah /interests [minat1, minat2]. '
+        'Sekarang, bot akan mulai mencari pasangan chat untuk Anda...'
+    )
     
-    update.message.reply_text(f'Terima kasih telah memilih. Nama samaran Anda adalah {nickname}. Menunggu pengguna lain...')
     waiting_users[gender].append(user_id)
-    find_chat_partner(user_id, context)
+    await find_chat_partner(user_id, context)
 
-def male(update: Update, context: CallbackContext) -> None:
-    """Menangani pemilihan gender laki-laki."""
-    set_gender(update, context, 'male')
-
-def female(update: Update, context: CallbackContext) -> None:
-    """Menangani pemilihan gender perempuan."""
-    set_gender(update, context, 'female')
-
-def logout(update: Update, context: CallbackContext) -> None:
-    """Menangani perintah /logout."""
+async def end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
     if user_id in active_chats:
         partner_id = active_chats.pop(user_id, None)
         if partner_id:
             active_chats.pop(partner_id, None)
-            context.bot.send_message(chat_id=partner_id, text="Pengguna lain telah meninggalkan chat.")
-        update.message.reply_text('Anda telah keluar dari sesi chat anonim.')
+            await context.bot.send_message(chat_id=partner_id, text="Pasangan chat Anda telah mengakhiri sesi chat.")
+        await update.message.reply_text('Sesi chat telah diakhiri. Kirim /start untuk memulai lagi.')
+        await remove_from_waiting(user_id)
     else:
-        remove_from_waiting(user_id)
-        update.message.reply_text('Anda telah keluar dari antrian.')
+        await remove_from_waiting(user_id)
+        await update.message.reply_text('Anda tidak sedang dalam sesi chat. Kirim /start untuk memulai.')
 
-def skip(update: Update, context: CallbackContext) -> None:
-    """Menangani perintah /skip untuk melewati sesi chat dan mencari pengguna baru."""
+async def skip(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
+    
     if user_id in active_chats:
         partner_id = active_chats.pop(user_id, None)
         if partner_id:
             active_chats.pop(partner_id, None)
-            context.bot.send_message(chat_id=partner_id, text="Pengguna lain telah melewati sesi chat. Mencari pasangan baru...")
+            await context.bot.send_message(
+                chat_id=partner_id,
+                text="Pasangan chat Anda telah melewati sesi. Mencari pasangan baru..."
+            )
+            
             waiting_users[user_data[partner_id]['gender']].append(partner_id)
-            find_chat_partner(partner_id, context)
-
-        update.message.reply_text('Anda telah melewati sesi chat. Menunggu pengguna lain...')
+            await find_chat_partner(partner_id, context)
+        
+        await update.message.reply_text('Anda telah melewati sesi chat. Mencari pengguna lain...')
         waiting_users[user_data[user_id]['gender']].append(user_id)
-        find_chat_partner(user_id, context)
+        await find_chat_partner(user_id, context)
     else:
-        update.message.reply_text('Anda tidak dalam sesi chat. Mencari pengguna lain...')
+        await remove_from_waiting(user_id)
+        await update.message.reply_text('Anda tidak dalam sesi chat. Mencari pengguna lain...')
         waiting_users[user_data[user_id]['gender']].append(user_id)
-        find_chat_partner(user_id, context)
+        await find_chat_partner(user_id, context)
 
-def handle_message(update: Update, context: CallbackContext) -> None:
-    """Menangani pesan yang dikirim oleh pengguna."""
+async def report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
-    user_message = update.message.text
-
-    if contains_forbidden_words(user_message):
-        update.message.reply_text('Pesan Anda mengandung kata-kata terlarang dan tidak akan dikirim.')
-        return
-
     if user_id in active_chats:
         partner_id = active_chats.get(user_id)
         if partner_id:
-            partner_nickname = user_data[partner_id]['nickname']
-            context.bot.send_message(chat_id=partner_id, text=f'{user_data[user_id]["nickname"]}: {user_message}')
+            await context.bot.send_message(
+                chat_id=user_id,
+                text="Laporan Anda telah diterima. Kami akan meninjau percakapan ini. Sesi chat akan diakhiri."
+            )
+            
+            await end_chat(update, context)
+    else:
+        await update.message.reply_text('Anda hanya bisa melaporkan pengguna saat sedang dalam sesi chat.')
+
+async def set_interests(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.message.from_user.id
+    if user_id not in user_data:
+        await update.message.reply_text('Anda harus memilih gender terlebih dahulu dengan /start.')
+        return
+    
+    if not context.args:
+        await update.message.reply_text('Sertakan minat Anda. Contoh: `/interests membaca, film, olahraga`')
+        return
+        
+    interests_list = [interest.strip().lower() for interest in ' '.join(context.args).split(',')]
+    user_data[user_id]['interests'] = set(interests_list)
+    await update.message.reply_text(f'Minat Anda telah disimpan: {", ".join(user_data[user_id]["interests"])}.')
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.message.from_user.id
+    user_message = update.message.text
+    
+    if contains_forbidden_words(user_message):
+        await update.message.reply_text('Pesan Anda mengandung kata-kata terlarang dan tidak akan dikirim. Mohon gunakan bahasa yang sopan.')
+        return
+        
+    if user_id in active_chats:
+        partner_id = active_chats.get(user_id)
+        if partner_id:
+            nickname = user_data[user_id]['nickname']
+            await context.bot.send_message(chat_id=partner_id, text=f'{nickname}: {user_message}')
         else:
-            update.message.reply_text('Pasangan chat Anda tidak ditemukan.')
+            await update.message.reply_text('Pasangan chat Anda tidak ditemukan. Kirim /endchat untuk mengakhiri sesi.')
     else:
-        update.message.reply_text('Anda tidak sedang terhubung dengan pengguna lain.')
+        await update.message.reply_text('Anda tidak sedang terhubung dengan pengguna lain. Kirim /start untuk memulai chat baru.')
 
-def find_chat_partner(user_id: int, context: CallbackContext) -> None:
-    """Mencari pasangan chat dari lawan jenis."""
-    user_gender = user_data[user_id]['gender']
+async def find_chat_partner(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_info = user_data.get(user_id)
+    if not user_info:
+        return
+
+    user_gender = user_info['gender']
     opposite_gender = 'male' if user_gender == 'female' else 'female'
+    
+    if not waiting_users[opposite_gender]:
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="Tidak ada pengguna lawan jenis yang tersedia. Menunggu pengguna lain..."
+        )
+        return
 
-    if waiting_users[opposite_gender]:
-        partner_id = waiting_users[opposite_gender].pop(0) 
-        active_chats[user_id] = partner_id
-        active_chats[partner_id] = user_id
+    best_match_id = None
+    max_match_score = -1
 
-        context.bot.send_message(chat_id=user_id, text=f"Anda terhubung dengan {user_data[partner_id]['nickname']}. Mulailah mengirim pesan.")
-        context.bot.send_message(chat_id=partner_id, text=f"Anda terhubung dengan {user_data[user_id]['nickname']}. Mulailah mengirim pesan.")
+    for partner_id in waiting_users[opposite_gender]:
+        partner_info = user_data.get(partner_id)
+        if not partner_info:
+            continue
+        
+        common_interests = user_info['interests'].intersection(partner_info['interests'])
+        match_score = len(common_interests)
+        
+        if match_score > max_match_score:
+            best_match_id = partner_id
+            max_match_score = match_score
+
+    if best_match_id:
+        partner_id = best_match_id
+        waiting_users[opposite_gender].remove(partner_id)
     else:
-        context.bot.send_message(chat_id=user_id, text="Tidak ada pengguna lawan jenis yang tersedia. Menunggu pengguna lain...")
+        partner_id = waiting_users[opposite_gender].pop(0)
 
-def remove_from_waiting(user_id: int) -> None:
-    """Menghapus pengguna dari antrian menunggu."""
+    active_chats[user_id] = partner_id
+    active_chats[partner_id] = user_id
+    
+    common_interests = user_info['interests'].intersection(user_data[partner_id]['interests'])
+    interests_message = ''
+    if common_interests:
+        interests_message = f"\nKalian berdua memiliki minat yang sama: {', '.join(common_interests)}."
+
+    await context.bot.send_message(
+        chat_id=user_id,
+        text=f"Anda terhubung dengan **{user_data[partner_id]['nickname']}**! Mulailah mengirim pesan.{interests_message}"
+    )
+    await context.bot.send_message(
+        chat_id=partner_id,
+        text=f"Anda terhubung dengan **{user_data[user_id]['nickname']}**! Mulailah mengirim pesan.{interests_message}"
+    )
+
+async def remove_from_waiting(user_id: int) -> None:
     gender = user_data.get(user_id, {}).get('gender')
     if gender and user_id in waiting_users[gender]:
         waiting_users[gender].remove(user_id)
 
 def main() -> None:
-    """Menjalankan bot."""
-    updater = Updater(TOKEN)
+    application = Application.builder().token(TOKEN).build()
 
-    dispatcher = updater.dispatcher
+    application.add_handler(CommandHandler('start', start))
+    application.add_handler(CommandHandler('endchat', end_chat))
+    application.add_handler(CommandHandler('skip', skip))
+    application.add_handler(CommandHandler('report', report))
+    application.add_handler(CommandHandler('interests', set_interests))
+    application.add_handler(CallbackQueryHandler(set_gender))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    dispatcher.add_handler(CommandHandler('start', start))
-    dispatcher.add_handler(CommandHandler('male', male))
-    dispatcher.add_handler(CommandHandler('female', female))
-    dispatcher.add_handler(CommandHandler('logout', logout))
-    dispatcher.add_handler(CommandHandler('skip', skip))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-
-    updater.start_polling()
-    updater.idle()
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
     main()
